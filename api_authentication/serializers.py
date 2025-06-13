@@ -5,7 +5,7 @@ import secrets
 from .models import EmployeeModel
 from django.core.mail import send_mail
 
-class EmployeeAccountCreationSerailizer(serializers.ModelSerializer):
+class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     username = serializers.CharField(required=True)
 

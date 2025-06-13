@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 import uuid
 
 # let user to login using both email and username
-# default User model - for login
-# use employee model for registration 
+# default User model - for login, registration 
+# use employee model for users extra profile
 # Separate Work Schedule class for user workshecule FK to Employee
 class EmployeeModel(models.Model):
     """
