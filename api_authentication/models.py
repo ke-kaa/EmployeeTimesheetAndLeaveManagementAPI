@@ -6,7 +6,29 @@ import uuid
 # default User model - for login
 # use employee model for registration 
 # Separate Work Schedule class for user workshecule FK to Employee
-class Employee(models.Model):
+class EmployeeModel(models.Model):
+    """
+    Model to store additional employee information linked to a Django User.
+
+    Fields:
+        user (OneToOneField): The associated Django User account.
+        employee_id (UUIDField): Unique identifier for the employee.
+        date_of_birth (DateField): The employee's date of birth.
+        gender (CharField): The employee's gender (Male/Female).
+        phone_number_one (CharField): Primary phone number.
+        phone_number_two (CharField): Secondary phone number (optional).
+        department (CharField): Department where the employee works.
+        job_title (CharField): Employee's job title.
+        hire_date (DateField): Date the employee was hired.
+        leave_balance (FloatField): Remaining leave balance for the employee.
+        manager (ForeignKey): Reference to the employee's manager (self-referential).
+        roles (CharField): Role of the employee (EMPLOYEE, MANAGER, ADMIN).
+
+    Notes:
+        - Used for employee registration and profile management.
+        - Supports linking to a separate Work Schedule model via a foreign key.
+    """
+
     GENDER_CHOICE = (
         ("Male", "Male"),
         ("Female", "Female"),
