@@ -40,9 +40,8 @@ class EmployeeModel(models.Model):
     )
 
     password_reset_required = models.BooleanField(default=True)
-    temp_password = models.CharField(max_length=128)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    employee_id = models.UUIDField(uuid.uuid4, editable=False, unique=True)
+    employee_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=10, null=True, blank=True, choices=GENDER_CHOICE)
     phone_number_one = models.CharField(max_length=20, null=True, blank=True)
