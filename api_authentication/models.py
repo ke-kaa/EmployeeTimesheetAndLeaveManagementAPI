@@ -22,7 +22,7 @@ class EmployeeModel(models.Model):
         hire_date (DateField): Date the employee was hired.
         leave_balance (FloatField): Remaining leave balance for the employee.
         manager (ForeignKey): Reference to the employee's manager (self-referential).
-        roles (CharField): Role of the employee (EMPLOYEE, MANAGER, ADMIN).
+        role (CharField): Role of the employee (EMPLOYEE, MANAGER, ADMIN).
 
     Notes:
         - Used for employee registration and profile management.
@@ -39,6 +39,8 @@ class EmployeeModel(models.Model):
         ("ADMIN", "ADMIN"),
     )
 
+    password_reset_required = models.BooleanField(default=True)
+    temp_password = models.CharField(max_length=128)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     employee_id = models.UUIDField(uuid.uuid4, editable=False, unique=True)
     date_of_birth = models.DateField(null=True, blank=True)
@@ -47,7 +49,7 @@ class EmployeeModel(models.Model):
     phone_number_two = models.CharField(max_length=20, null=True, blank=True)
     department = models.CharField(max_length=250, null=True, blank=True)
     job_title =  models.CharField(max_length=250, null=True, blank=True)
-    hire_date = models.DateField()
+    hire_date = models.DateField(null=True, blank=True)
     leave_balance = models.FloatField(null=True, blank=True)
     manager = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    roles = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_CHOICES[0])
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_CHOICES[0])
