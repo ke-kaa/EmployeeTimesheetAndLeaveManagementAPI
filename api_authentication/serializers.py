@@ -5,7 +5,7 @@ import secrets
 from .models import EmployeeModel
 from django.core.mail import send_mail
 from django.conf import settings
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 import logging
 import smtplib
 from .utils import SMTP_ERROR_CODES
@@ -224,10 +224,7 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
 # Move email data to separate template ( add html versoin for email clients)
 # password reset url : absolute url with domain (add expirty time for reset link)
 
-class LoginSerailizer(serializers.Serializer):
-    username = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
-
+class CustomTokenObtainPairSerializer(serializers.Serializer):
     def validate(self, attrs):
         username = attrs.get('username')
         
@@ -239,16 +236,20 @@ class LoginSerailizer(serializers.Serializer):
             )
         
         if hasattr(user, 'employee') and user.employee.password_reset_required:
-            attrs['requires_password_reset'] = True
-        else:
-            user = authenticate(
-                username=username,
-                password=attrs.get('password')
+            raise serializers.ValidationError({
+                "redirect": reverse('password-reset') + f"?username={username}"},
+                code="password_reset_required"
             )
-            if not user:
-                raise serializers.ValidationError(
-                    {"error": "Invalid credentials"}
-                )
-            attrs['user'] = user
-            
-        return attrs
+        
+        authenticated_user = authenticate(
+            username=username,
+            password=attrs.get('password')
+        )
+        if not authenticated_user:
+            raise serializers.ValidationError(
+                {"error": "Invalid credentials"}
+            )
+        
+        data = super().validate(attrs)
+        
+        return data
