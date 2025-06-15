@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 import secrets
 from .models import EmployeeModel
@@ -11,8 +11,10 @@ import smtplib
 from .utils import SMTP_ERROR_CODES
 from django.db import transaction
 from django.core.cache import cache
+from django.contrib.auth import authenticate
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 # Cache timeout (1 hour)
 MANAGER_DEPT_CACHE_TIMEOUT = 3600  
 USER_EXISTS_CACHE_TIMEOUT = 300
@@ -119,7 +121,7 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
         if request.user.is_superuser:
             return data
 
-        if hasattr(request.user, 'empoyee') and (request.user.employee.role == 'MANAGER' and data.get('role') in ['MANAGER', 'ADMIN']):
+        if hasattr(request.user, 'employee') and (request.user.employee.role == 'MANAGER' and data.get('role') in ['MANAGER', 'ADMIN']):
             raise serializers.ValidationError("Manager creation is restricted to Admins only.")
         
         cache_key = f"user_{request.user.pk}_department"
@@ -151,7 +153,8 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
                 username=validated_data['username'],
                 email=validated_data['email'],
                 password=make_password(temp_password),
-                is_active=True
+                is_active=True,
+                is_staff=validated_data['role'] == 'MANAGER'
             )
 
             EmployeeModel.objects.create(
@@ -175,7 +178,7 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
         Password: {temp_password}
 
         Reset your password on first login.
-        Login here: {reverse_lazy('password-reset-view-name')} 
+        Login here: {reverse_lazy('Login page url')} 
         '''
         # View and url or password reset will be created later.
         try:
@@ -220,3 +223,32 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
     
 # Move email data to separate template ( add html versoin for email clients)
 # password reset url : absolute url with domain (add expirty time for reset link)
+
+class LoginSerailizer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"username": "No user found with this username"}
+            )
+        
+        if hasattr(user, 'employee') and user.employee.password_reset_required:
+            attrs['requires_password_reset'] = True
+        else:
+            user = authenticate(
+                username=username,
+                password=attrs.get('password')
+            )
+            if not user:
+                raise serializers.ValidationError(
+                    {"error": "Invalid credentials"}
+                )
+            attrs['user'] = user
+            
+        return attrs
