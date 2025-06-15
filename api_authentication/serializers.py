@@ -12,6 +12,9 @@ from .utils import SMTP_ERROR_CODES
 from django.db import transaction
 from django.core.cache import cache
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -224,7 +227,7 @@ class EmployeeAccountCreationSerializer(serializers.ModelSerializer):
 # Move email data to separate template ( add html versoin for email clients)
 # password reset url : absolute url with domain (add expirty time for reset link)
 
-class CustomTokenObtainPairSerializer(serializers.Serializer):
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = attrs.get('username')
         
@@ -237,8 +240,8 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         
         if hasattr(user, 'employee') and user.employee.password_reset_required:
             raise serializers.ValidationError({
-                "redirect": reverse('password-reset') + f"?username={username}"},
-                code="password_reset_required"
+                "redirect": reverse('password-reset') + f"?username={username}", "username": username},
+                code="password_reset_required",
             )
         
         authenticated_user = authenticate(
@@ -253,3 +256,27 @@ class CustomTokenObtainPairSerializer(serializers.Serializer):
         data = super().validate(attrs)
         
         return data
+    
+
+class InitialPasswordResetSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+
+    def validate(self, attrs):
+        user = User.objects.get(username=attrs['username'])
+
+        if hasattr(user, 'emloyee') and not user.employee.password_reset_required:
+            raise serializers.ValidationError({"error": "Password reset not required"})    
+            
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match"})
+        
+        try:
+            validate_password(attrs['new_password'], user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)})
+
+        attrs['user'] = user
+
+        return attrs                
