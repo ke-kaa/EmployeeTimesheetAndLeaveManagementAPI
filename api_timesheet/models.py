@@ -1,8 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-import datetime
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+
 
 class TimesheetModel(models.Model):
     """
@@ -23,7 +22,7 @@ class TimesheetModel(models.Model):
         Adds an index on user and clock_in_time for efficient querying.
     """
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True,)
     clock_in_time = models.DateTimeField(null=True, blank=True,db_index=True)
     clock_out_time = models.DateTimeField(null=True, blank=True, db_index=True)
     working_hours = models.DurationField(null=True, blank=True, editable=False, db_index=True)
