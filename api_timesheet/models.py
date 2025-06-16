@@ -43,3 +43,5 @@ class TimesheetModel(models.Model):
         indexes = [
             models.Index(fields=['user', 'clock_in_time'])
         ]
+
+        ordering = ['-clock_in_time']

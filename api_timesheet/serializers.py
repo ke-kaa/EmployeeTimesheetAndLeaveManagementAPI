@@ -65,3 +65,9 @@ class ClockOutSerializer(serializers.ModelSerializer):
         self.timesheet.clock_out_time = self.validated_clock_out_time
         self.timesheet.save()
         return self.timesheet
+    
+
+class EmployeeTimesheet(serializers.ModelSerializer):
+    class Meta:
+        model = my_models.TimesheetModel
+        fields = ['id', 'clock_in_time', 'clock_out_time', 'working_hours']
