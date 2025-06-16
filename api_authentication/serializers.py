@@ -240,10 +240,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         if hasattr(user, 'employee') and user.employee.password_reset_required:
             raise serializers.ValidationError({
-                "redirect": reverse('password-reset') + f"?username={username}", "username": username},
-                code="password_reset_required",
-            )
-        
+                    "non_field_errors": ["password_reset_required"],
+                    "redirect": reverse('password-reset') + f"?username={username}"
+                })
+                    
         authenticated_user = authenticate(
             username=username,
             password=attrs.get('password')
@@ -264,19 +264,79 @@ class InitialPasswordResetSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
 
     def validate(self, attrs):
-        user = User.objects.get(username=attrs['username'])
-
-        if hasattr(user, 'emloyee') and not user.employee.password_reset_required:
+        username = attrs['username'].strip()
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"username": "No user found with this username"})
+        
+        if hasattr(user, 'emlpoyee') and not user.employee.password_reset_required:
             raise serializers.ValidationError({"error": "Password reset not required"})    
             
         if attrs['password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Passwords do not match"})
         
         try:
-            validate_password(attrs['new_password'], user)
+            validate_password(attrs['password'], user)
         except DjangoValidationError as e:
             raise serializers.ValidationError({"password": list(e.messages)})
 
         attrs['user'] = user
 
-        return attrs                
+        return attrs       
+
+
+class UserSerailizer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+
+class EmployeeProfileSerializer(serializers.ModelSerializer):
+    GENDER_CHOICE = (
+        ("Male", "Male"),
+        ("Female", "Female"),
+    )
+
+    leave_balance = serializers.FloatField(read_only=True)
+    manager = serializers.CharField(read_only=True)
+    role = serializers.CharField(read_only=True)
+    user = UserSerailizer()
+
+    gender = serializers.CharField(choices=GENDER_CHOICE, required=True)
+    phone_number_one = serializers.CharField(required=True)
+    department = serializers.CharField(required=True)
+    job_title = serializers.CharField(required=True)
+    hire_date = serializers.DateField(required=True)
+    date_of_birth = serializers.DateField(required=True)
+
+    class Meta:
+        model = EmployeeModel
+        fields = ['user', 'date_of_birth', 'gender', 'phone_number_one', 'phone_number_two', 'department', 'job_title', 'hire_date', 'leave_balance', 'manager', 'role']
+    
+    def validate(self, attrs):
+        pass
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', None)
+
+        instance.date_of_birth = validated_data['date_of_birth']
+        instance.gender = validated_data['gender']
+        instance.phone_number_one = validated_data['phone_number_one']
+        instance.phone_number_two = validated_data['phone_number_two']
+        instance.department = validated_data['department']
+        instance.job_title = validated_data['job_title']
+
+        instance.save()
+
+        if user_data:
+            user = instance.user
+            user.username = user_data.get('username', user.username)
+            user.first_name = user_data.get('first_name', user.first_name)
+            user.last_name = user_data.get('last_name', user.last_name)
+            user.save()
+        
+        return instance
