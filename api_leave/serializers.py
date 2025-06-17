@@ -33,3 +33,15 @@ class EmployeeLeaveRequestCreateSerializer(serializers.ModelSerializer):
             user=self.context['request'].user,
             **validated_data
         )
+
+
+class EmployeeLeaveRequestListSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(read_only=True)
+    approved_by = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = my_models.LeaveRequestModel
+        fields = ['id', 'start_date', 'end_date', 'reason', 'status', 'approved_by']
+    
+    def get_approved_by(self, obj):
+        return obj.approved_by.get_full_name() if obj.approved_by else None

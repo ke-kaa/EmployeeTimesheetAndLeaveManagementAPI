@@ -1,16 +1,16 @@
 from django.shortcuts import render
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, pagination, filters
 from rest_framework_simplejwt import authentication
 from rest_framework.response import Response
 
 
-from . import models as my_models, serializers as my_serializers, permissions as my_permissions
+from . import models as my_models, serializers as my_serializers, permissions as my_permissions, pagination as my_pagination
 
 
 class EmployeeLeaveRequestCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [authentication.JWTAuthentication]
-    serializer_class = my_serializers.EmployeeLeaveRequestSerializer
+    serializer_class = my_serializers.EmployeeLeaveRequestCreateSerializer
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -28,3 +28,17 @@ class EmployeeLeaveRequestCreateView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED
         )
+    
+
+class EmployeeLeaveRequestListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.JWTAuthentication]
+    serializer_class = my_serializers.EmployeeLeaveRequestListSerializer
+    pagination_class = my_pagination.LeaveRequestPagination
+
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['start_date', 'end_date', 'status']
+    ordering = ['-start_date', '-end_date']
+
+    def get_queryset(self):
+        return my_models.LeaveRequestModel.objects.filter(user=self.request.user)
