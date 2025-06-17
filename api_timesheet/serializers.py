@@ -4,6 +4,9 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 
+from api_authentication.models import EmployeeModel
+
+
 User = get_user_model()
 
 
@@ -67,7 +70,40 @@ class ClockOutSerializer(serializers.ModelSerializer):
         return self.timesheet
     
 
-class EmployeeTimesheet(serializers.ModelSerializer):
+class EmployeeTimesheetSerializer(serializers.ModelSerializer):
     class Meta:
         model = my_models.TimesheetModel
         fields = ['id', 'clock_in_time', 'clock_out_time', 'working_hours']
+
+
+class EmployeeBasicInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeModel
+        fields = ['employee_id', 'department', 'job_title']
+
+        
+
+class ListEmployeeTimesheetSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = my_models.TimesheetModel
+        fields = ['id', 'clock_in_time', 'clock_out_time', 'working_hours', 'user']
+
+    def get_user(self, obj):
+        try:
+            employee = EmployeeModel.objects.get(user=obj.user)
+            return {
+                'username': obj.user.username,
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'employee_info': EmployeeBasicInfoSerializer(employee).data
+            }
+        except EmployeeModel.DoesNotExist:
+            return {
+                'username': obj.user.username,
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'employee_info': None
+            }
+        
