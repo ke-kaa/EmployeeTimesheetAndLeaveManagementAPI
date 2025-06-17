@@ -83,7 +83,7 @@ class EmployeeBasicInfoSerializer(serializers.ModelSerializer):
 
         
 
-class ListEmployeeTimesheetSerializer(serializers.ModelSerializer):
+class TeamEmployeeTimesheetSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     
     class Meta:
