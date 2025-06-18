@@ -68,3 +68,11 @@ class ApproveEmployeeLeaveRequestView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser | my_permissions.IsManager]
     queryset = my_models.LeaveRequestModel.objects.all()
     lookup_field = 'pk'
+
+    
+class RejectEmployeeLeaveRequestView(generics.UpdateAPIView):
+    serializer_class = my_serializers.RejectEmployeeLeaveRequestSerializer
+    authentication_classes = [authentication.JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser | my_permissions.IsManager]
+    queryset = my_models.LeaveRequestModel.objects.all()
+    lookup_field = 'pk'
