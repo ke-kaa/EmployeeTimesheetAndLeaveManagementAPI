@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 
 from . import models as my_models, serializers as my_serializers, permissions as my_permissions, pagination as my_pagination
+from api_authentication.models import EmployeeModel
 
 
 class EmployeeLeaveRequestCreateView(generics.CreateAPIView):
@@ -42,3 +43,21 @@ class EmployeeLeaveRequestListView(generics.ListAPIView):
 
     def get_queryset(self):
         return my_models.LeaveRequestModel.objects.filter(user=self.request.user)
+
+
+class TeamLeaveRequestView(generics.ListAPIView):
+    serializer_class = my_serializers.TeamLeaveRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser | my_permissions.IsManager]
+    pagination_class = my_pagination.LeaveRequestPagination
+    authentication_classes = [authentication.JWTAuthentication]
+
+
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['start_date', 'end_date', 'status']
+    ordering = ['-start_date', '-end_date']
+
+    def get_queryset(self):
+        current_employee = EmployeeModel.objects.get(user=self.request.user)
+        team_employee = EmployeeModel.objects.filter(manager=current_employee).values_list('user', flat=True)
+        return my_models.LeaveRequestModel.objects.filter(user__in=team_employee)
+    

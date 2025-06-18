@@ -3,6 +3,7 @@ from rest_framework.utils import timezone
 
 
 from . import models as my_models
+from api_authentication.models import EmployeeModel
 
 
 class EmployeeLeaveRequestCreateSerializer(serializers.ModelSerializer):
@@ -45,3 +46,34 @@ class EmployeeLeaveRequestListSerializer(serializers.ModelSerializer):
     
     def get_approved_by(self, obj):
         return obj.approved_by.get_full_name() if obj.approved_by else None
+
+
+class EmployeeBasicInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeModel
+        fields = ['employee_id', 'department', 'job_title']
+
+
+class TeamLeaveRequestSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    class Meta:
+        model = my_models.LeaveRequestModel
+        fields = ['id', 'start_date', 'end_date', 'reason', 'status', 'approved_by', 'user']
+
+    def get_user(self, obj):
+        try:
+            employee = EmployeeModel.objects.get(user=obj.user)
+            return {
+                'username': obj.user.username,
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'employee_info': EmployeeBasicInfoSerializer(employee).data
+            }
+        except EmployeeModel.DoesNotExist:
+            return {
+                'username': obj.user.username,
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'employee_info': None
+            }
+        
