@@ -61,3 +61,10 @@ class TeamLeaveRequestView(generics.ListAPIView):
         team_employee = EmployeeModel.objects.filter(manager=current_employee).values_list('user', flat=True)
         return my_models.LeaveRequestModel.objects.filter(user__in=team_employee)
     
+
+class ApproveEmployeeLeaveRequestView(generics.UpdateAPIView):
+    serializer_class = my_serializers.ApproveEmployeeLeaveRequestSerializer
+    authentication_classes = [authentication.JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser | my_permissions.IsManager]
+    queryset = my_models.LeaveRequestModel.objects.all()
+    lookup_field = 'pk'

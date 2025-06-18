@@ -77,3 +77,20 @@ class TeamLeaveRequestSerializer(serializers.ModelSerializer):
                 'employee_info': None
             }
         
+
+class ApproveEmployeeLeaveRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = my_models.LeaveRequestModel
+        fields = ['id', 'start_date', 'end_date', 'reason', 'status', 'approved_by']
+        read_only_fields = ['id', 'start_date', 'end_date', 'reason']
+
+    
+    def update(self, instance, validated_data):
+        if instance.status != my_models.LeaveRequestModel.Status.PENDING:
+            raise serializers.ValidationError("Only pending leave request can be approved.")
+        
+        instance.status = my_models.LeaveRequestModel.Status.APPROVED
+        instance.approved_by = self.context['request'].user
+        instance.save()
+
+        return instance
