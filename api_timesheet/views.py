@@ -50,7 +50,7 @@ class ClockOutView(generics.UpdateAPIView):
     
 
 class EmployeeTimesheetView(generics.ListAPIView):
-    serializer_class = my_serializers.EmployeeTimesheet
+    serializer_class = my_serializers.EmployeeTimesheetSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
